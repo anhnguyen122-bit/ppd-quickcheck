@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PPD QuickCheck – Bản mở rộng (phi chẩn đoán)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .card{ @apply bg-white/90 dark:bg-slate-900/80 backdrop-blur rounded-2xl shadow p-5 border border-slate-200 dark:border-slate-700; }
+    .hint{ @apply text-xs text-slate-500; }
+    .pill{ @apply inline-block px-2 py-0.5 rounded-full text-xs font-semibold; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 dark:from-slate-950 dark:to-slate-900 text-slate-900 dark:text-slate-50">
+  <header class="max-w-4xl mx-auto p-6 flex justify-between items-center">
+    <h1 class="text-2xl font-bold">PPD QuickCheck – Extended Screening Tool</h1>
+    <button id="langBtn" class="px-3 py-1 rounded-lg bg-indigo-600 text-white">EN/VI</button>
+  </header>
+
+  <main class="max-w-4xl mx-auto p-6 grid gap-6" id="content"></main>
+
+  <footer class="max-w-4xl mx-auto p-6 text-xs text-slate-500">
+    © 2025 PPD QuickCheck (Educational, non-diagnostic). Dữ liệu chỉ lưu cục bộ.
+  </footer>
+
+  <script>
+    let lang = 'vi';
+
+    const texts = {
+      vi: {
+        safety: '1) An toàn trước tiên',
+        safetyHint: 'Nếu có ý nghĩ tự hại hoặc mất an toàn → gọi 115 ngay hoặc tới cơ sở y tế gần nhất.',
+        ppd: '2) Đặc điểm PPD (theo DSM-5-TR)',
+        ppdHint: 'Đánh dấu nếu tình trạng kéo dài từ đầu tuổi trưởng thành, lặp lại trong nhiều bối cảnh (gia đình/công việc/xã hội).',
+        extended: '3) Bộ mở rộng 15 câu hỏi (tham khảo PDQ-4+, SCID-5-PD)',
+        extendedHint: 'Chọn “Đúng” nếu trong ≥6 tháng gần đây bạn thường xuyên như mô tả.',
+        impact: '4) Ảnh hưởng tới cuộc sống',
+        diff: '5) Yếu tố khác dễ nhầm',
+        actions: 'Kết quả & gợi ý bước tiếp theo',
+        patientInfo: '6) Thông tin cá nhân (chỉ lưu cục bộ)',
+        name: 'Tên/biệt danh',
+        phone: 'Số điện thoại',
+        email: 'Email',
+        wishlist: 'Điều mong muốn / nhu cầu hỗ trợ',
+        calc: 'Tính kết quả sơ bộ',
+        reset: 'Làm lại',
+        export: 'Xuất CSV',
+        print: 'In ra PDF',
+        low: 'Ít đặc điểm PPD: Không đáng lo, nhưng nếu vẫn khó chịu → hãy trò chuyện với chuyên gia.',
+        mid: 'Một số khuynh hướng PPD: Có thể ảnh hưởng giao tiếp, nên cân nhắc tư vấn tâm lý (CBT).',
+        high: 'Nhiều đặc điểm PPD: Cần được khám chuyên khoa tâm thần để đánh giá và hỗ trợ.',
+        resultCount: 'Tổng số câu “Đúng”:',
+        notesTitle: 'Ghi chú / Notes',
+        notesIntro: 'Công cụ này chỉ mang tính giáo dục và sàng lọc sơ bộ, KHÔNG thay thế chẩn đoán của bác sĩ tâm thần hay nhà trị liệu.',
+        notesScoring: 'Cách tính điểm: tổng số câu “Đúng” từ 7 tiêu chí DSM-5-TR + 15 câu mở rộng (tổng 22). Ngưỡng: 0–3 = Ít; 4–7 = Trung bình; ≥8 = Cao.',
+        notesLow: 'Mức Ít: Có thể phản ánh phong cách phòng vệ bình thường hoặc căng thẳng nhất thời. Nếu vẫn thấy khó chịu, nên tham khảo chuyên gia.',
+        notesMid: 'Mức Trung bình: Một số khuynh hướng PPD có thể ảnh hưởng giao tiếp và lòng tin. Khuyến nghị tư vấn CBT, kỹ năng giao tiếp, sàng lọc kèm (PHQ‑9, GAD‑7), xem xét giấc ngủ và sử dụng chất.',
+        notesHigh: 'Mức Cao: Nhiều đặc điểm PPD; khuyến nghị đánh giá bởi bác sĩ/nhà trị liệu. Trị liệu tâm lý là trọng tâm; thuốc có thể hỗ trợ triệu chứng (lo âu, kích động, trầm cảm) nhưng không “chữa khỏi” PPD.',
+        notesRisk: 'Nếu có hoang tưởng/ảo giác nổi bật hoặc mất an toàn → ưu tiên khám chuyên khoa khẩn cấp.',
+        refsTitle: 'Nguồn tham khảo (chính thống)',
+        refsHTML: `<ul class='list-disc ml-6 text-sm leading-6'>
+          <li><b>MSD Manuals – Professional:</b> Tổng quan & xử trí PPD. <a class='text-indigo-600 underline' href='https://www.msdmanuals.com/vi/professional/r%E1%BB%91i-lo%E1%BA%A1n-t%C3%A2m-th%E1%BA%A7n/r%E1%BB%91i-lo%E1%BA%A1n-nh%C3%A2n-c%C3%A1ch/r%E1%BB%91i-lo%E1%BA%A1n-nh%C3%A2n-c%C3%A1ch-hoang-t%C6%B0%E1%BB%9Fng-ppd' target='_blank' rel='noopener'>Xem</a></li>
+          <li><b>APA DSM‑5‑TR:</b> Diagnostic and Statistical Manual of Mental Disorders (2022) – tiêu chuẩn chẩn đoán cho chuyên gia.</li>
+          <li><b>WHO ICD‑11:</b> Personality disorders – mô tả phân loại quốc tế. <a class='text-indigo-600 underline' href='https://icd.who.int' target='_blank' rel='noopener'>icd.who.int</a></li>
+          <li><b>NICE (UK):</b> Hướng dẫn về rối loạn nhân cách – nhấn mạnh trị liệu tâm lý là chính. <a class='text-indigo-600 underline' href='https://www.nice.org.uk/guidance' target='_blank' rel='noopener'>nice.org.uk/guidance</a></li>
+        </ul>`
+      },
+      en: {
+        safety: '1) Safety First',
+        safetyHint: 'If you feel unsafe or suicidal → call emergency services immediately.',
+        ppd: '2) PPD Traits (DSM-5-TR)',
+        ppdHint: 'Check if these have been persistent since early adulthood across multiple settings.',
+        extended: '3) Extended 15-item Screening (from PDQ-4+, SCID-5-PD)',
+        extendedHint: 'Select “Yes” if this has been frequent for ≥6 months.',
+        impact: '4) Impact on Life',
+        diff: '5) Other Possible Explanations',
+        actions: 'Preliminary Result & Next Steps',
+        patientInfo: '6) Personal Info (local only)',
+        name: 'Name/Nickname',
+        phone: 'Phone',
+        email: 'Email',
+        wishlist: 'Wishes / Support needs',
+        calc: 'Calculate Result',
+        reset: 'Reset',
+        export: 'Export CSV',
+        print: 'Print to PDF',
+        low: 'Few PPD traits: Not concerning, but if distress remains → talk to a professional.',
+        mid: 'Some PPD tendencies: May affect communication, consider counseling (CBT).',
+        high: 'Multiple PPD traits: Professional psychiatric evaluation recommended.',
+        resultCount: 'Total “Yes” count:',
+        notesTitle: 'Notes',
+        notesIntro: 'This tool is educational and non‑diagnostic. It does not replace assessment by a licensed clinician.',
+        notesScoring: 'Scoring: total “Yes” across 7 DSM‑5‑TR traits + 15 extended items (22 total). Cutoffs: 0–3 = Low; 4–7 = Medium; ≥8 = High.',
+        notesLow: 'Low: May reflect normal defensiveness or temporary stress. If distress persists, consider speaking with a professional.',
+        notesMid: 'Medium: Some PPD tendencies may affect trust/communication. Consider CBT, communication skills, adjunct screens (PHQ‑9, GAD‑7), sleep and substance review.',
+        notesHigh: 'High: Multiple PPD features; seek professional psychiatric/psychological evaluation. Psychotherapy is first‑line; meds may target symptoms (anxiety, agitation, depression) but do not “cure” PPD.',
+        notesRisk: 'If prominent delusions/hallucinations or immediate safety concerns → urgent assessment.',
+        refsTitle: 'References',
+        refsHTML: `<ul class='list-disc ml-6 text-sm leading-6'>
+          <li><b>MSD Manuals – Professional:</b> Paranoid Personality Disorder overview & management. <a class='text-indigo-600 underline' href='https://www.msdmanuals.com/professional/psychiatric-disorders/personality-disorders/paranoid-personality-disorder' target='_blank' rel='noopener'>View</a></li>
+          <li><b>APA DSM‑5‑TR:</b> Diagnostic and Statistical Manual of Mental Disorders (2022) – for clinicians.</li>
+          <li><b>WHO ICD‑11:</b> Personality disorders overview. <a class='text-indigo-600 underline' href='https://icd.who.int' target='_blank' rel='noopener'>icd.who.int</a></li>
+          <li><b>NICE (UK):</b> Personality disorder guidance – psychological therapies as mainstay. <a class='text-indigo-600 underline' href='https://www.nice.org.uk/guidance' target='_blank' rel='noopener'>nice.org.uk/guidance</a></li>
+        </ul>`
+      }
+    };
+
+    const dsmItems = [
+      'Nghi ngờ người khác hại mình / Suspects harm without reason',
+      'Nghi ngờ lòng trung thành / Doubts loyalty',
+      'Không tin tưởng vì sợ bị lợi dụng / Reluctant to confide',
+      'Hiểu sai ý tốt thành ác ý / Reads hidden threats',
+      'Thù dai / Bears grudges',
+      'Phản ứng tức giận nhanh / Quick to react angrily',
+      'Nghi ngờ vợ/chồng ngoại tình / Suspects infidelity'
+    ];
+
+    const extItems = [
+      'Tôi thường cảnh giác căng thẳng, khó thư giãn / Hyper-vigilant, hard to relax',
+      'Tôi tránh chia sẻ thông tin cá nhân / Avoid sharing personal info',
+      'Tôi nghĩ đồng nghiệp/bạn bè chống lại mình / Think colleagues are against me',
+      'Tôi khó thân thiết với ai đó / Struggle to form close trustful bonds',
+      'Tôi dễ xung đột vì thiếu tin tưởng / Often clash due to mistrust',
+      'Quan hệ thân thiết hay đổ vỡ vì nghi ngờ / Relationships end due to suspicion',
+      'Tôi khó hợp tác trong nhóm / Teamwork difficult',
+      'Cuộc sống bị hạn chế vì luôn đề phòng / Life limited by guarding',
+      'Tôi hay thử thách sự trung thành / Test loyalty excessively',
+      'Tôi hay hiểu sai lời nói thành xúc phạm / Misinterpret neutral remarks as insults',
+      'Tôi nhớ lâu chuyện nhỏ / Hold onto minor slights for long',
+      'Tôi cảm thấy bị hạ thấp trước đám đông / Feel belittled in public',
+      'Tôi nghi ngờ mục đích tốt của người khác / Doubt others’ goodwill',
+      'Tôi cần bằng chứng quá mức để tin ai / Need excessive proof to trust',
+      'Tôi kiểm soát thông tin vì sợ bị lợi dụng / Control info to avoid exploitation'
+    ];
+
+    function render(){
+      const t = texts[lang];
+      const c = document.getElementById('content');
+      c.innerHTML = `
+        <section class=\"card\"><h2>${t.safety}</h2><p class=\"hint\">${t.safetyHint}</p>
+          <label><input type=\"checkbox\" id=\"s1\"> Tôi an toàn / I am safe now</label><br>
+          <label><input type=\"checkbox\" id=\"s2\"> Tôi tỉnh táo / I am sober and alert</label>
+        </section>
+
+        <section class=\"card\"><h2>${t.ppd}</h2><p class=\"hint\">${t.ppdHint}</p>
+          ${dsmItems.map((q,i)=>`<label><input type='checkbox' id='ppd${i+1}'> ${q}</label><br>`).join('')}
+        </section>
+
+        <section class=\"card\"><h2>${t.extended}</h2><p class=\"hint\">${t.extendedHint}</p>
+          ${extItems.map((q,i)=>`<label><input type='checkbox' id='ext${i+1}'> ${q}</label><br>`).join('')}
+        </section>
+
+        <section class=\"card\"><h2>${t.impact}</h2>
+          <label><input type=\"checkbox\" id=\"imp1\"> Quan hệ bị ảnh hưởng / Relationships impacted</label><br>
+          <label><input type=\"checkbox\" id=\"imp2\"> Công việc/học tập bị ảnh hưởng / Work/Study impacted</label>
+        </section>
+
+        <section class=\"card\"><h2>${t.diff}</h2>
+          <label><input type=\"checkbox\" id=\"df1\"> Stress only</label><br>
+          <label><input type=\"checkbox\" id=\"df2\"> Psychosis signs</label><br>
+          <label><input type=\"checkbox\" id=\"df3\"> Substance related</label>
+        </section>
+
+        <section class=\"card\"><h2>${t.patientInfo}</h2>
+          <input class=\"border p-1 w-full mb-2\" placeholder=\"${t.name}\" id=\"pname\"><br>
+          <input class=\"border p-1 w-full mb-2\" placeholder=\"${t.phone}\" id=\"pphone\"><br>
+          <input class=\"border p-1 w-full mb-2\" placeholder=\"${t.email}\" id=\"pemail\"><br>
+          <textarea class=\"border p-1 w-full\" placeholder=\"${t.wishlist}\" id=\"pwish\"></textarea>
+        </section>
+
+        <section class=\"card\">
+          <button id=\"calcBtn\" class=\"px-3 py-2 bg-indigo-600 text-white rounded\">${t.calc}</button>
+          <button id=\"resetBtn\" class=\"px-3 py-2 bg-slate-200 text-black rounded\">${t.reset}</button>
+          <button id=\"exportBtn\" class=\"px-3 py-2 bg-emerald-600 text-white rounded\">${t.export}</button>
+          <button id=\"printBtn\" class=\"px-3 py-2 bg-rose-600 text-white rounded\">${t.print}</button>
+          <div id=\"result\" class=\"mt-3\"></div>
+        </section>
+
+        <section class=\"card\">
+          <h2>${t.notesTitle}</h2>
+          <p class=\"mt-2 text-sm\">${t.notesIntro}</p>
+          <p class=\"mt-2 text-sm\"><b>${t.resultCount}</b> ${t.notesScoring}</p>
+          <div class=\"mt-3 grid gap-2 text-sm\">
+            <div class=\"p-3 rounded border border-emerald-300 bg-emerald-50 text-emerald-900\"><b>LOW / Ít:</b> ${t.notesLow}</div>
+            <div class=\"p-3 rounded border border-sky-300 bg-sky-50 text-sky-900\"><b>MEDIUM / Trung bình:</b> ${t.notesMid}</div>
+            <div class=\"p-3 rounded border border-amber-300 bg-amber-50 text-amber-900\"><b>HIGH / Cao:</b> ${t.notesHigh}</div>
+            <p class=\"text-xs text-slate-500\">${t.notesRisk}</p>
+          </div>
+          <h3 class=\"mt-4 font-semibold\">${t.refsTitle}</h3>
+          ${t.refsHTML}
+        </section>`;
+    }
+
+    document.getElementById('langBtn').addEventListener('click', ()=>{
+      lang = (lang==='vi'?'en':'vi');
+      render();
+    });
+
+    render();
+
+    function computeResult(){
+      const t = texts[lang];
+      const safe1 = document.getElementById('s1')?.checked;
+      const safe2 = document.getElementById('s2')?.checked;
+      if(!(safe1 && safe2)){
+        return `<div class='p-4 rounded-xl bg-rose-100 text-rose-800 border border-rose-300'><b>Khuyến cáo/Warning:</b> ${t.safetyHint}</div>`;
+      }
+      let count=0; for(let i=1;i<=7;i++) if(document.getElementById('ppd'+i)?.checked) count++;
+      let extCount=0; for(let i=1;i<=15;i++) if(document.getElementById('ext'+i)?.checked) extCount++;
+      const total = count+extCount;
+      let msg = `<p class='mb-2 font-semibold'>${t.resultCount} ${total}</p>`;
+      if(total>=8) msg += `<div class='p-3 bg-amber-100 text-amber-800 rounded'>${t.high}</div>`;
+      else if(total>=4) msg += `<div class='p-3 bg-sky-100 text-sky-800 rounded'>${t.mid}</div>`;
+      else msg += `<div class='p-3 bg-emerald-100 text-emerald-800 rounded'>${t.low}</div>`;
+      return msg;
+    }
+
+    function exportCSV(){
+      const rows = [];
+      rows.push(['timestamp', new Date().toISOString()]);
+      rows.push(['safe_ok', (document.getElementById('s1')?.checked && document.getElementById('s2')?.checked)]);
+      for(let i=1;i<=7;i++){ rows.push(['ppd_'+i, !!document.getElementById('ppd'+i)?.checked]); }
+      for(let i=1;i<=15;i++){ rows.push(['ext_'+i, !!document.getElementById('ext'+i)?.checked]); }
+      rows.push(['impact_rel', !!document.getElementById('imp1')?.checked]);
+      rows.push(['impact_work', !!document.getElementById('imp2')?.checked]);
+      rows.push(['flag_stress_only', !!document.getElementById('df1')?.checked]);
+      rows.push(['flag_psychosis', !!document.getElementById('df2')?.checked]);
+      rows.push(['flag_substance', !!document.getElementById('df3')?.checked]);
+      rows.push(['name', document.getElementById('pname')?.value || '']);
+      rows.push(['phone', document.getElementById('pphone')?.value || '']);
+      rows.push(['email', document.getElementById('pemail')?.value || '']);
+      rows.push(['wishlist', JSON.stringify(document.getElementById('pwish')?.value || '')]);
+
+      const csv = rows.map(r=>r.join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'PPD_QuickCheck_Extended.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.addEventListener('click', e=>{
+      if(e.target.id==='calcBtn'){
+        document.getElementById('result').innerHTML = computeResult();
+        window.scrollTo({top: document.getElementById('result').offsetTop - 80, behavior:'smooth'});
+      }
+      if(e.target.id==='resetBtn') location.reload();
+      if(e.target.id==='exportBtn') exportCSV();
+      if(e.target.id==='printBtn') window.print();
+    });
+  </script>
+</body>
+</html>
